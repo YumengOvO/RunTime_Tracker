@@ -430,11 +430,9 @@ router.get('/pageConfig', (req, res) => {
 });
 
 
-const express = require("express");
-const router = express.Router();
+// ==================== 心率 Webhook ====================
 const { broadcastHeartRate } = require("../index");
 
-// 心率 Webhook 接口
 router.post("/heart-rate", async (req, res) => {
     const { deviceId, heartRate, timestamp } = req.body;
 
@@ -442,18 +440,14 @@ router.post("/heart-rate", async (req, res) => {
         return res.status(400).json({ error: "缺少 deviceId 或 heartRate" });
     }
 
-    const data = {
+    broadcastHeartRate({
         deviceId,
         heartRate,
         timestamp: timestamp || Date.now()
-    };
+    });
 
-    // 推送给实时监控页面
-    broadcastHeartRate(data);
-
-    return res.json({ status: "ok" });
+    res.json({ status: "ok" });
 });
-
 
 
 
