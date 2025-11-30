@@ -85,9 +85,45 @@ app.use('/admin', adminRoutes);
 app.use('/api', apiRoutes);
 app.use('/api', eyeapiRoutes);
 
+
+
+
+// --- WebSocket 实时推送心率 ---
+const http = require('http');
+const WebSocket = require('ws');
+
+// 用同一个 HTTP 服务器同时托管 Express + WebSocket
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// 保存在线客户端
+const hrClients = new Set();
+
+wss.on("connection", (ws, req) => {
+    if (req.url === "/ws/heart-rate") {
+        hrClients.add(ws);
+
+        ws.on("close", () => hrClients.delete(ws));
+    }
+});
+
+// 工具函数：广播心率给所有在线前端
+function broadcastHeartRate(data) {
+    const msg = JSON.stringify(data);
+    for (const client of hrClients) {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(msg);
+        }
+    }
+}
+
+module.exports.broadcastHeartRate = broadcastHeartRate;
+
+
+
 // 启动服务器
-app.listen(PORT, HOST, () => {
-    console.log(`Server running on http://${HOST}:${PORT}`);
+server.listen(PORT, HOST, () => {
+    console.log(`HTTP/WebSocket Server running on http://${HOST}:${PORT}`);
     console.log('[AI Summary]:', aiSummary.enabled ? '已启用' : '已禁用');
     if (aiSummary.enabled && aiSummary.aiConfig.apiKey) {
         console.log('[AI Summary]定时任务: 已启用');
