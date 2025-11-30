@@ -429,4 +429,32 @@ router.get('/pageConfig', (req, res) => {
     }
 });
 
+
+const express = require("express");
+const router = express.Router();
+const { broadcastHeartRate } = require("../index");
+
+// 心率 Webhook 接口
+router.post("/heart-rate", async (req, res) => {
+    const { deviceId, heartRate, timestamp } = req.body;
+
+    if (!deviceId || !heartRate) {
+        return res.status(400).json({ error: "缺少 deviceId 或 heartRate" });
+    }
+
+    const data = {
+        deviceId,
+        heartRate,
+        timestamp: timestamp || Date.now()
+    };
+
+    // 推送给实时监控页面
+    broadcastHeartRate(data);
+
+    return res.json({ status: "ok" });
+});
+
+
+
+
 module.exports = router;
